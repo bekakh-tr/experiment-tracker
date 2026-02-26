@@ -21,14 +21,32 @@
           Timeline (days)
           <input id="days" name="days" type="number" min="1" max="365" value="14" required />
         </label>
-        <button type="submit">Search</button>
+        <button id="search-button" type="submit">
+          <span id="search-button-spinner" class="button-spinner hidden" aria-hidden="true"></span>
+          <span id="search-button-label">Search</span>
+        </button>
       </form>
 
       <div id="status" class="status"></div>
 
       <section class="panel">
         <h2>Daily participation</h2>
-        <canvas id="daily-chart"></canvas>
+        <div class="chart-wrap">
+          <canvas id="daily-chart"></canvas>
+          <div id="chart-loading-overlay" class="chart-loading-overlay hidden">
+            <span class="spinner" aria-hidden="true"></span>
+            <span>Loading chart data...</span>
+          </div>
+        </div>
+        <label class="experiment-filter-label">
+          Highlight experiment
+          <input
+            id="experiment-filter"
+            type="text"
+            placeholder="Type experiment id to highlight..."
+            autocomplete="off"
+          />
+        </label>
         <div id="daily-table"></div>
       </section>
 

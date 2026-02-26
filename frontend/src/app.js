@@ -10,8 +10,14 @@ const statusEl = document.getElementById("status");
 const tableEl = document.getElementById("daily-table");
 const detailsEl = document.getElementById("experiment-details");
 const chartCanvas = document.getElementById("daily-chart");
+const chartLoadingOverlay = document.getElementById("chart-loading-overlay");
+const experimentFilterInput = document.getElementById("experiment-filter");
+const searchButton = document.getElementById("search-button");
+const searchButtonLabel = document.getElementById("search-button-label");
+const searchButtonSpinner = document.getElementById("search-button-spinner");
 
 const apiBase = `${window.location.origin}/api`;
+const SEARCH_LABEL = "Search";
 const FUNNY_LOADING_WORDS = [
   "Combobulating",
   "Knowledge-seeking",
@@ -23,33 +29,53 @@ const FUNNY_LOADING_WORDS = [
   "Hypothesis-hunting",
   "Insight-foraging",
   "Pattern-puzzling",
+  "Query-juggling",
+  "Metric-munching",
+  "Data-divining",
+  "Cluster-cuddling",
+  "Dashboard-doodling",
+  "Pixel-polishing",
+  "Schema-surfing",
+  "Signal-summoning",
+  "Event-entangling",
+  "Fact-fishing",
+  "Pattern-peeking",
+  "Filter-finessing",
+  "Null-banishing",
+  "Result-rousing",
+  "Timeline-tickling",
+  "Insight-igniting",
+  "Graph-grooming",
+  "Latency-lassoing",
+  "Payload-polishing",
+  "Variant-vaulting",
 ];
 
 let loadingTimer = null;
 
 function setStatus(message, isError = false) {
-  statusEl.classList.remove("status-loading");
-  statusEl.innerHTML = "";
-  const text = document.createElement("span");
-  text.textContent = message;
-  statusEl.appendChild(text);
+  statusEl.textContent = message;
   statusEl.style.color = isError ? "#b91c1c" : "#111827";
 }
 
-function setLoading(message) {
-  if (loadingTimer) {
-    clearInterval(loadingTimer);
-    loadingTimer = null;
+function setChartLoading(isLoading) {
+  chartLoadingOverlay.classList.toggle("hidden", !isLoading);
+}
+
+function shuffleWords(words) {
+  const copy = [...words];
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
   }
-  statusEl.classList.add("status-loading");
-  statusEl.style.color = "#111827";
-  statusEl.innerHTML = "";
-  const spinner = document.createElement("span");
-  spinner.className = "spinner";
-  spinner.setAttribute("aria-hidden", "true");
-  const text = document.createElement("span");
-  text.textContent = message;
-  statusEl.append(spinner, text);
+  return copy;
+}
+
+function setSearchButtonLoading(isLoading, message = SEARCH_LABEL) {
+  searchButton.disabled = isLoading;
+  searchButton.classList.toggle("button-loading", isLoading);
+  searchButtonSpinner.classList.toggle("hidden", !isLoading);
+  searchButtonLabel.textContent = message;
 }
 
 function startFunnySearchLoading() {
@@ -57,11 +83,11 @@ function startFunnySearchLoading() {
     clearInterval(loadingTimer);
     loadingTimer = null;
   }
-  const words = [...FUNNY_LOADING_WORDS].sort(() => Math.random() - 0.5);
+  const words = shuffleWords(FUNNY_LOADING_WORDS);
   let idx = 0;
   const nextMessage = () => {
     const word = words[idx % words.length];
-    setLoading(`${word}...`);
+    setSearchButtonLoading(true, `${word}...`);
     idx += 1;
   };
   nextMessage();
@@ -73,6 +99,16 @@ function stopFunnySearchLoading() {
     clearInterval(loadingTimer);
     loadingTimer = null;
   }
+  setSearchButtonLoading(false, SEARCH_LABEL);
+}
+
+function applyExperimentHighlight() {
+  const query = (experimentFilterInput.value || "").trim().toLowerCase();
+  tableEl.querySelectorAll(".experiment-chip").forEach((chip) => {
+    const expId = chip.getAttribute("data-exp-open") || "";
+    const isMatch = query && expId.toLowerCase().includes(query);
+    chip.classList.toggle("experiment-chip-highlight", Boolean(isMatch));
+  });
 }
 
 function renderTable(data) {
@@ -81,39 +117,39 @@ function renderTable(data) {
     return;
   }
 
-  const rows = data.daily
+  const dayBlocks = data.daily
     .map((dayEntry) => {
-      const experiments = dayEntry.experiments
+      const experiments = [...dayEntry.experiments]
+        .sort((a, b) => a.experiment_id.localeCompare(b.experiment_id))
         .map((exp) => {
           const variantsTitle = Array.isArray(exp.variants) && exp.variants.length
             ? `Variants: ${exp.variants.join(", ")}`
             : "Variants: not available yet";
-          return `<div class="experiment-row">
-              <button
-                type="button"
-                class="experiment-chip"
-                data-exp-open="${exp.experiment_id}"
-                title="${variantsTitle}"
-                aria-label="Show experiment details for ${exp.experiment_id}"
-              >
-                <span class="experiment-corner">i</span>
-                <span class="experiment-label">${exp.experiment_id}</span>
-              </button>
-            </div>`;
+          return `<button
+              type="button"
+              class="experiment-chip"
+              data-exp-open="${exp.experiment_id}"
+              title="${variantsTitle}"
+              aria-label="Show experiment details for ${exp.experiment_id}"
+            >
+              <span class="experiment-corner">i</span>
+              <span class="experiment-label">${exp.experiment_id}</span>
+            </button>`;
         })
         .join("");
-      return `<tr>
-        <td>${dayEntry.day}</td>
-        <td>${dayEntry.count}</td>
-        <td>${experiments}</td>
-      </tr>`;
+
+      return `<article class="day-card">
+        <header class="day-card-header">
+          <span class="day-card-date">${dayEntry.day}</span>
+          <span class="day-card-count">${dayEntry.count} experiment(s)</span>
+        </header>
+        <div class="day-card-experiments">${experiments}</div>
+      </article>`;
     })
     .join("");
 
-  tableEl.innerHTML = `<table>
-    <thead><tr><th>Day</th><th>Count</th><th>Experiments</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>`;
+  tableEl.innerHTML = `<div class="day-card-list">${dayBlocks}</div>`;
+  applyExperimentHighlight();
 }
 
 tableEl.addEventListener("click", async (event) => {
@@ -123,6 +159,8 @@ tableEl.addEventListener("click", async (event) => {
   if (!experimentId) return;
   await loadExperimentDetails(experimentId, trigger);
 });
+
+experimentFilterInput.addEventListener("input", applyExperimentHighlight);
 
 function renderChart(data) {
   const labels = data.daily.map((entry) => entry.day);
@@ -151,7 +189,8 @@ function renderChart(data) {
         const dayEntry = state.latestResponse.daily[index];
         const firstExperiment = dayEntry?.experiments?.[0];
         if (firstExperiment) {
-          await loadExperimentDetails(firstExperiment.experiment_id);
+          const triggerEl = tableEl.querySelector(`[data-exp-open="${firstExperiment.experiment_id}"]`);
+          await loadExperimentDetails(firstExperiment.experiment_id, triggerEl);
         }
       },
       scales: {
@@ -167,7 +206,7 @@ function renderChart(data) {
 async function loadExperimentDetails(experimentId, triggerEl = null) {
   if (!state.selectedGcid) return;
 
-  setLoading(`Loading details for experiment ${experimentId}...`);
+  setStatus(`Loading details for experiment ${experimentId}...`);
   detailsEl.classList.remove("muted");
 
   try {
@@ -215,7 +254,9 @@ form.addEventListener("submit", async (event) => {
   }
 
   startFunnySearchLoading();
-  detailsEl.textContent = "Click a bar or experiment ID from the table to load details.";
+  setChartLoading(true);
+  setStatus("");
+  detailsEl.textContent = "Click an experiment chip or chart bar to load details.";
   detailsEl.classList.add("muted");
 
   try {
@@ -234,15 +275,16 @@ form.addEventListener("submit", async (event) => {
     state.selectedDays = days;
     renderChart(payload);
     renderTable(payload);
-    stopFunnySearchLoading();
     setStatus(`Found ${payload.daily.length} active day(s).`);
   } catch (error) {
-    stopFunnySearchLoading();
     if (state.chart) {
       state.chart.destroy();
       state.chart = null;
     }
     tableEl.innerHTML = "";
     setStatus(error.message, true);
+  } finally {
+    stopFunnySearchLoading();
+    setChartLoading(false);
   }
 });
