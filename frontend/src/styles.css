@@ -113,9 +113,11 @@ td {
 
 .experiment-row {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
   margin-bottom: 10px;
   min-width: 180px;
+  gap: 4px;
 }
 
 .experiment-chip {
@@ -153,3 +155,4 @@ td {
   text-align: center;
   font-weight: 700;
 }
+

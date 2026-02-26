@@ -84,21 +84,23 @@ function renderTable(data) {
   const rows = data.daily
     .map((dayEntry) => {
       const experiments = dayEntry.experiments
-        .map(
-          (exp) =>
-            `<div class="experiment-row">
+        .map((exp) => {
+          const variantsTitle = Array.isArray(exp.variants) && exp.variants.length
+            ? `Variants: ${exp.variants.join(", ")}`
+            : "Variants: not available yet";
+          return `<div class="experiment-row">
               <button
                 type="button"
                 class="experiment-chip"
                 data-exp-open="${exp.experiment_id}"
-                title="Show experiment details"
+                title="${variantsTitle}"
                 aria-label="Show experiment details for ${exp.experiment_id}"
               >
                 <span class="experiment-corner">i</span>
                 <span class="experiment-label">${exp.experiment_id}</span>
               </button>
-            </div>`
-        )
+            </div>`;
+        })
         .join("");
       return `<tr>
         <td>${dayEntry.day}</td>
@@ -119,7 +121,7 @@ tableEl.addEventListener("click", async (event) => {
   if (!trigger) return;
   const experimentId = trigger.getAttribute("data-exp-open");
   if (!experimentId) return;
-  await loadExperimentDetails(experimentId);
+  await loadExperimentDetails(experimentId, trigger);
 });
 
 function renderChart(data) {
@@ -162,7 +164,7 @@ function renderChart(data) {
   });
 }
 
-async function loadExperimentDetails(experimentId) {
+async function loadExperimentDetails(experimentId, triggerEl = null) {
   if (!state.selectedGcid) return;
 
   setLoading(`Loading details for experiment ${experimentId}...`);
@@ -188,6 +190,13 @@ async function loadExperimentDetails(experimentId) {
       <p><strong>Overlapping experiments:</strong> ${payload.overlap_experiment_count}</p>
       <p><strong>Variants:</strong> ${payload.variants.join(", ") || "None"}</p>
     `;
+
+    if (triggerEl) {
+      const updatedTitle = payload.variants.length
+        ? `Variants: ${payload.variants.join(", ")}`
+        : "Variants: none found";
+      triggerEl.setAttribute("title", updatedTitle);
+    }
     setStatus("Experiment details loaded.");
   } catch (error) {
     detailsEl.textContent = error.message;
