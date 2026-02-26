@@ -62,6 +62,27 @@ button:hover {
   margin-bottom: 10px;
 }
 
+.status-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #d1d5db;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .panel {
   background: white;
   border: 1px solid #e5e7eb;
@@ -88,4 +109,47 @@ td {
   color: #1d4ed8;
   cursor: pointer;
   text-decoration: underline;
+}
+
+.experiment-row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  min-width: 180px;
+}
+
+.experiment-chip {
+  position: relative;
+  padding: 8px 10px 6px;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
+  color: #1e3a8a;
+  font-weight: 600;
+  max-width: 100%;
+}
+
+.experiment-chip:hover {
+  background: #dbeafe;
+}
+
+.experiment-label {
+  display: inline-block;
+  max-width: 100%;
+  word-break: break-word;
+}
+
+.experiment-corner {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #1e3a8a;
+  color: #ffffff;
+  font-size: 9px;
+  line-height: 14px;
+  text-align: center;
+  font-weight: 700;
 }

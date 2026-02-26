@@ -2,7 +2,7 @@ const state = {
   chart: null,
   latestResponse: null,
   selectedGcid: "",
-  selectedDays: 30,
+  selectedDays: 14,
 };
 
 const form = document.getElementById("search-form");
@@ -12,10 +12,67 @@ const detailsEl = document.getElementById("experiment-details");
 const chartCanvas = document.getElementById("daily-chart");
 
 const apiBase = `${window.location.origin}/api`;
+const FUNNY_LOADING_WORDS = [
+  "Combobulating",
+  "Knowledge-seeking",
+  "Experiment-whispering",
+  "Variant-vibing",
+  "Timeline-tunneling",
+  "Signal-sniffing",
+  "Data-sherlocking",
+  "Hypothesis-hunting",
+  "Insight-foraging",
+  "Pattern-puzzling",
+];
+
+let loadingTimer = null;
 
 function setStatus(message, isError = false) {
-  statusEl.textContent = message;
+  statusEl.classList.remove("status-loading");
+  statusEl.innerHTML = "";
+  const text = document.createElement("span");
+  text.textContent = message;
+  statusEl.appendChild(text);
   statusEl.style.color = isError ? "#b91c1c" : "#111827";
+}
+
+function setLoading(message) {
+  if (loadingTimer) {
+    clearInterval(loadingTimer);
+    loadingTimer = null;
+  }
+  statusEl.classList.add("status-loading");
+  statusEl.style.color = "#111827";
+  statusEl.innerHTML = "";
+  const spinner = document.createElement("span");
+  spinner.className = "spinner";
+  spinner.setAttribute("aria-hidden", "true");
+  const text = document.createElement("span");
+  text.textContent = message;
+  statusEl.append(spinner, text);
+}
+
+function startFunnySearchLoading() {
+  if (loadingTimer) {
+    clearInterval(loadingTimer);
+    loadingTimer = null;
+  }
+  const words = [...FUNNY_LOADING_WORDS].sort(() => Math.random() - 0.5);
+  let idx = 0;
+  const nextMessage = () => {
+    const word = words[idx % words.length];
+    setLoading(`${word}...`);
+    idx += 1;
+  };
+  nextMessage();
+  loadingTimer = setInterval(nextMessage, 900);
+}
+
+function stopFunnySearchLoading() {
+  if (loadingTimer) {
+    clearInterval(loadingTimer);
+    loadingTimer = null;
+  }
 }
 
 function renderTable(data) {
@@ -29,7 +86,18 @@ function renderTable(data) {
       const experiments = dayEntry.experiments
         .map(
           (exp) =>
-            `<div><span class="experiment-link" data-exp-id="${exp.experiment_id}">${exp.experiment_id}</span> - ${exp.experiment_name} (${exp.variants.join(", ") || "no variants"})</div>`
+            `<div class="experiment-row">
+              <button
+                type="button"
+                class="experiment-chip"
+                data-exp-open="${exp.experiment_id}"
+                title="Show experiment details"
+                aria-label="Show experiment details for ${exp.experiment_id}"
+              >
+                <span class="experiment-corner">i</span>
+                <span class="experiment-label">${exp.experiment_id}</span>
+              </button>
+            </div>`
         )
         .join("");
       return `<tr>
@@ -44,14 +112,15 @@ function renderTable(data) {
     <thead><tr><th>Day</th><th>Count</th><th>Experiments</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>`;
-
-  tableEl.querySelectorAll("[data-exp-id]").forEach((el) => {
-    el.addEventListener("click", async (event) => {
-      const experimentId = event.target.getAttribute("data-exp-id");
-      await loadExperimentDetails(experimentId);
-    });
-  });
 }
+
+tableEl.addEventListener("click", async (event) => {
+  const trigger = event.target.closest("[data-exp-open]");
+  if (!trigger) return;
+  const experimentId = trigger.getAttribute("data-exp-open");
+  if (!experimentId) return;
+  await loadExperimentDetails(experimentId);
+});
 
 function renderChart(data) {
   const labels = data.daily.map((entry) => entry.day);
@@ -96,7 +165,7 @@ function renderChart(data) {
 async function loadExperimentDetails(experimentId) {
   if (!state.selectedGcid) return;
 
-  setStatus(`Loading details for experiment ${experimentId}...`);
+  setLoading(`Loading details for experiment ${experimentId}...`);
   detailsEl.classList.remove("muted");
 
   try {
@@ -130,13 +199,13 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const gcid = document.getElementById("gcid").value.trim();
-  const days = Number(document.getElementById("days").value || 30);
+  const days = Number(document.getElementById("days").value || 14);
   if (!gcid) {
     setStatus("GCID is required.", true);
     return;
   }
 
-  setStatus("Searching...");
+  startFunnySearchLoading();
   detailsEl.textContent = "Click a bar or experiment ID from the table to load details.";
   detailsEl.classList.add("muted");
 
@@ -156,8 +225,10 @@ form.addEventListener("submit", async (event) => {
     state.selectedDays = days;
     renderChart(payload);
     renderTable(payload);
+    stopFunnySearchLoading();
     setStatus(`Found ${payload.daily.length} active day(s).`);
   } catch (error) {
+    stopFunnySearchLoading();
     if (state.chart) {
       state.chart.destroy();
       state.chart = null;

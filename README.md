@@ -79,11 +79,27 @@ These env vars make schema mapping configurable without code edits:
 - `DBX_HTTP_PATH_PROFILE`
 - `DBX_CONFIG_FILE`
 - `DBX_TABLE`
+- `DBX_EVENT_NAME_COLUMN`
+- `DBX_EVENT_NAME_VALUE`
+- `DBX_PARTITION_YEAR_COLUMN`
+- `DBX_PARTITION_MONTH_COLUMN`
+- `DBX_PARTITION_DAY_COLUMN`
 - `DBX_GCID_COLUMN`
 - `DBX_EVENT_TS_COLUMN`
 - `DBX_EXPERIMENT_ID_COLUMN`
 - `DBX_EXPERIMENT_NAME_COLUMN`
 - `DBX_VARIANT_COLUMN`
+- `DBX_VARIATION_BLOB_COLUMN`
+
+## Data mapping rules (project memory)
+
+The current backend logic is aligned to these rules:
+
+- Partition/date filtering uses `etr_y`, `etr_ym`, and `etr_ymd`
+- Customer identifier uses `mp_user_id` (GCID equivalent in this table)
+- Experiment trigger source is `mp_event_name = '$experiment_started'`
+- Variant is taken from `variationid`
+- Experiment context columns include `x_experiment_id_blob` and `x_variation_id_blob`
 
 ## Deployment notes (initial checklist)
 
