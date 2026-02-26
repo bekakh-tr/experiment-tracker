@@ -15,7 +15,9 @@ class Settings(BaseSettings):
     app_env: str = "local"
     allowed_origins: str = "http://localhost:8080,http://127.0.0.1:8080"
 
-    dbx_profile: str = Field(default="BekaLocal", alias="DBX_PROFILE")
+    dbx_profile: str = Field(default="Beka Databricks BI", alias="DBX_PROFILE")
+    dbx_http_path_profile: str = Field(default="BekaLocal", alias="DBX_HTTP_PATH_PROFILE")
+    dbx_config_file: str = Field(default="~/.databrickscfg", alias="DBX_CONFIG_FILE")
     dbx_table: str = Field(default="catalog.schema.experiment_events", alias="DBX_TABLE")
     dbx_gcid_column: str = Field(default="gcid", alias="DBX_GCID_COLUMN")
     dbx_event_ts_column: str = Field(default="event_ts", alias="DBX_EVENT_TS_COLUMN")

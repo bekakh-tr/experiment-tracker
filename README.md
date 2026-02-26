@@ -35,9 +35,14 @@ Local-first MVP for tracking customer experiment participation by GCID.
 
    - Copy `backend/.env.example` to `backend/.env`
    - Update the `DBX_*` table/column mapping values to your real Databricks schema
-   - Keep `DBX_PROFILE` aligned with your `~/.databrickscfg` profile name
+   - Keep `DBX_PROFILE` aligned with your OAuth profile in `~/.databrickscfg`
+   - Set `DBX_HTTP_PATH_PROFILE` to a profile that has SQL warehouse `http_path` if your OAuth profile does not include it
 
-4. Run API server:
+4. Ensure Databricks OAuth is authenticated for your profile:
+
+   - `databricks auth login --profile "Beka Databricks BI" --host https://<your-workspace-host>`
+
+5. Run API server:
 
    - `uvicorn app.main:app --reload --port 8000`
 
@@ -70,6 +75,9 @@ If served through FastAPI, open `http://localhost:8000/app`.
 
 These env vars make schema mapping configurable without code edits:
 
+- `DBX_PROFILE`
+- `DBX_HTTP_PATH_PROFILE`
+- `DBX_CONFIG_FILE`
 - `DBX_TABLE`
 - `DBX_GCID_COLUMN`
 - `DBX_EVENT_TS_COLUMN`
@@ -82,7 +90,8 @@ These env vars make schema mapping configurable without code edits:
 - Backend host: Render/Fly/other Python host
 - Frontend host: Vercel/Netlify, or serve `/frontend` via FastAPI as static files
 - Set production env vars:
-  - `DBX_PROFILE` or explicit Databricks auth method
+  - `DBX_PROFILE` (OAuth-capable profile)
+  - `DBX_HTTP_PATH_PROFILE` (if needed for SQL warehouse path)
   - all `DBX_*` mapping vars
   - `ALLOWED_ORIGINS` with deployed frontend URL
 - Ensure Databricks credentials are stored as platform secrets, never committed
