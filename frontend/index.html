@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Experiment Tracker</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <main class="container">
+      <h1>Experiment Tracker</h1>
+      <p class="muted">Track customer experiment participation by GCID.</p>
+
+      <form id="search-form" class="search-form">
+        <label>
+          GCID
+          <input id="gcid" name="gcid" type="text" placeholder="Enter customer GCID" required />
+        </label>
+        <label>
+          Timeline (days)
+          <input id="days" name="days" type="number" min="1" max="365" value="30" required />
+        </label>
+        <button type="submit">Search</button>
+      </form>
+
+      <div id="status" class="status"></div>
+
+      <section class="panel">
+        <h2>Daily participation</h2>
+        <canvas id="daily-chart"></canvas>
+        <div id="daily-table"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Experiment details</h2>
+        <div id="experiment-details" class="details muted">
+          Click a bar or experiment ID from the table to load details.
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
